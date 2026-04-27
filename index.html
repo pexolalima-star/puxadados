@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Puxa Dados</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      min-height: 100vh;
+      color: #fff;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      opacity: 0.9;
+      font-size: 1.1rem;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .search-area {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    input {
+      flex: 1;
+      padding: 16px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      background: rgba(255, 255, 255, 0.9);
+      color: #1e3a8a;
+    }
+
+    button {
+      padding: 16px 32px;
+      background: #eab308;
+      color: #1e3a8a;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    button:hover {
+      background: #facc15;
+      transform: translateY(-2px);
+    }
+
+    .result {
+      display: none;
+      background: rgba(255, 255, 255, 0.95);
+      color: #1e2937;
+      border-radius: 12px;
+      padding: 25px;
+      margin-top: 20px;
+    }
+
+    .result.show {
+      display: block;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .info-item {
+      background: #f8fafc;
+      padding: 18px;
+      border-radius: 10px;
+      border-left: 5px solid #3b82f6;
+    }
+
+    .info-label {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      display: none;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔍 Painel de Puxa Dados</h1>
+      <p class="subtitle">Consulte informações rapidamente</p>
+    </header>
+
+    <div class="card">
+      <div class="search-area">
+        <input type="text" id="inputDado" placeholder="Digite o CPF, nome, telefone ou código..." autocomplete="off">
+        <button onclick="puxarDados()">🔎 Puxar Dados</button>
+      </div>
+
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Buscando dados...</p>
+      </div>
+
+      <div id="resultado" class="result">
+        <h2 style="margin-bottom: 20px; color: #1e40af;">✅ Resultado da Consulta</h2>
+        <div class="info-grid" id="infoGrid">
+          <!-- Os dados serão inseridos aqui via JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <p style="text-align: center; margin-top: 30px; opacity: 0.7; font-size: 0.9rem;">
+      Este é um exemplo demonstrativo. Em produção, conecte com uma API real via Fetch.
+    </p>
+  </div>
+
+  <script>
+    function puxarDados() {
+      const input = document.getElementById('inputDado').value.trim();
+      const loading = document.getElementById('loading');
+      const resultado = document.getElementById('resultado');
+      const grid = document.getElementById('infoGrid');
+
+      if (!input) {
+        alert('Por favor, digite algo para consultar!');
+        return;
+      }
+
+      // Mostra loading
+      loading.style.display = 'block';
+      resultado.classList.remove('show');
+
+      // Simula
