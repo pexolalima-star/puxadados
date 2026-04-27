@@ -150,6 +150,7 @@
       padding: 15px;
       border-radius: 12px;
       transition: background 0.2s;
+      border-left: 4px solid #3b82f6;
     }
 
     .info-item:hover {
@@ -216,22 +217,22 @@
 <body>
   <div class="container">
     <header>
-      <h1>⚡ Painel de Consulta</h1>
-      <p class="subtitle">Busca em tempo real via APIs Públicas</p>
+      <h1>⚡ Painel de Consulta Pro</h1>
+      <p class="subtitle">CEP, CNPJ ou Telefone (DDD) em tempo real</p>
     </header>
 
     <div class="card">
       <div class="search-area">
         <div class="input-wrapper">
-          <input type="text" id="inputDado" placeholder="Digite CEP ou CNPJ..." autocomplete="off">
+          <input type="text" id="inputDado" placeholder="Digite número, CEP ou CNPJ..." autocomplete="off">
         </div>
         <button id="btnConsultar">CONSULTAR</button>
       </div>
-      <p class="hint">Ex: 01001000 (CEP) ou 00000000000191 (CNPJ do Banco do Brasil)</p>
+      <p class="hint">Ex: 11999998888 (Tel), 01001000 (CEP) ou 00000000000191 (CNPJ)</p>
 
       <div id="loading" class="loading">
         <div class="spinner"></div>
-        <p>Acessando banco de dados...</p>
+        <p>Acessando bancos de dados públicos...</p>
       </div>
 
       <div id="errorBox" class="error-msg"></div>
@@ -247,7 +248,7 @@
   </div>
 
   <footer>
-    Utilizando BrasilAPI e ViaCEP • Dados atualizados em tempo real
+    Utilizando BrasilAPI e ViaCEP • Fontes oficiais atualizadas
   </footer>
 
   <script>
@@ -260,54 +261,53 @@
 
     btn.addEventListener('click', puxarDados);
     
-    // Permitir busca ao apertar Enter
     inputField.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') puxarDados();
     });
 
     async function puxarDados() {
-      const valor = inputField.value.trim().replace(/\D/g, ''); // Remove caracteres não numéricos
+      const valor = inputField.value.trim().replace(/\D/g, ''); 
       
       if (!valor) {
-        showError('Por favor, insira um CEP ou CNPJ válido.');
+        showError('Por favor, insira um valor válido para consulta.');
         return;
       }
 
-      // Resetar interface
       errorBox.style.display = 'none';
       resultado.classList.remove('show');
       loading.style.display = 'block';
       infoGrid.innerHTML = '';
 
       try {
-        let dados;
-        let tipo;
+        let tipo = "";
 
-        // Lógica para decidir qual API usar baseada no tamanho do input
+        // Identificação por comprimento de caracteres numéricos
         if (valor.length === 8) {
-          // É um CEP
           tipo = "Endereço (CEP)";
           const response = await fetch(`https://viacep.com.br/ws/${valor}/json/`);
-          dados = await response.json();
-          
+          const dados = await response.json();
           if (dados.erro) throw new Error("CEP não encontrado.");
-          
           renderCEP(dados);
         } 
+        else if (valor.length === 10 || valor.length === 11) {
+          tipo = "Localidade de Telefone (DDD)";
+          const ddd = valor.substring(0, 2);
+          const response = await fetch(`https://brasilapi.com.br/api/ddd/v1/${ddd}`);
+          if (!response.ok) throw new Error("DDD inválido ou não encontrado.");
+          const dados = await response.json();
+          renderTelefone(dados, valor);
+        }
         else if (valor.length === 14) {
-          // É um CNPJ
           tipo = "Empresa (CNPJ)";
           const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${valor}`);
-          if (!response.ok) throw new Error("CNPJ não encontrado ou erro na base.");
-          dados = await response.json();
-          
+          if (!response.ok) throw new Error("CNPJ não cadastrado ou erro na base.");
+          const dados = await response.json();
           renderCNPJ(dados);
         } 
         else {
-          throw new Error("Formato inválido. Insira 8 dígitos para CEP ou 14 para CNPJ.");
+          throw new Error("Formato inválido. Use 8 dígitos (CEP), 10/11 (Tel) ou 14 (CNPJ).");
         }
 
-        // Sucesso
         document.getElementById('tipoConsulta').innerText = `✅ ${tipo}`;
         document.getElementById('timestamp').innerText = new Date().toLocaleTimeString();
         loading.style.display = 'none';
@@ -334,11 +334,21 @@
     function renderCNPJ(data) {
       const items = [
         { label: "Razão Social", value: data.razao_social },
-        { label: "Nome Fantasia", value: data.nome_fantasia || "N/A" },
+        { label: "Nome Fantasia", value: data.nome_fantasia || "Não informado" },
         { label: "Situação", value: data.descricao_situacao_cadastral },
-        { label: "Início Atividade", value: data.data_inicio_atividade },
+        { label: "Abertura", value: data.data_inicio_atividade },
         { label: "Cidade/UF", value: `${data.municipio} - ${data.uf}` },
-        { label: "CNAE Principal", value: data.cnae_fiscal_descricao }
+        { label: "Capital Social", value: `R$ ${data.capital_social.toLocaleString('pt-BR')}` }
+      ];
+      buildGrid(items);
+    }
+
+    function renderTelefone(data, original) {
+      const items = [
+        { label: "Número Consultado", value: original },
+        { label: "Estado", value: data.state },
+        { label: "Tipo Identificado", value: original.length === 11 ? "Celular" : "Fixo" },
+        { label: "Cidades na Região", value: data.cities.slice(0, 5).join(', ') + "..." }
       ];
       buildGrid(items);
     }
